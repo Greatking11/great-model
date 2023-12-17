@@ -1,5 +1,5 @@
 flask
-python 
+python 3.0
 pandas
 sklearn
 joblib
