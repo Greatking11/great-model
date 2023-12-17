@@ -1,46 +1,34 @@
-import pandas as pd
+from flask import Flask, request, jsonify
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.naive_bayes import MultinomialNB
-from sklearn.model_selection import train_test_split
 import joblib
 
-# Load the dataset
-data = pd.read_csv('rhetorical_questions.csv', encoding='latin1')
+app = Flask(__name__)
 
-# Print column names
-print("Column Names:", data.columns)
-
-# Remove leading and trailing spaces from column names
-data.columns = data.columns.str.strip()
-
-# Separate features and labels
-X = data['Question']
-y = data['Label']
-
-# Vectorize the text
-vectorizer = TfidfVectorizer()
-X_vec = vectorizer.fit_transform(X)
-
-# Split the data into training and test sets
-X_train, X_test, y_train, y_test = train_test_split(X_vec, y, test_size=0.2)
-
-# Train the Naive Bayes classifier
-classifier = MultinomialNB()
-classifier.fit(X_train, y_train)
-
-# Make predictions on the test set
-y_pred = classifier.predict(X_test)
-
-# Evaluate the model performance
-accuracy = classifier.score(X_test, y_test)
-print('Accuracy:', accuracy)
-
-# Save the model and vectorizer
+# Load the pre-trained model
 model_filename = 'rhetorical_model.joblib'
+classifier = joblib.load(model_filename)
+
+# Load the vectorizer
 vectorizer_filename = 'tfidf_vectorizer.joblib'
+vectorizer = joblib.load(vectorizer_filename)
 
-joblib.dump(classifier, model_filename)
-joblib.dump(vectorizer, vectorizer_filename)
+@app.route('/predict', methods=['POST'])
+def predict():
+    # Receive input data from the request
+    data = request.get_json()
 
-print(f"Trained model saved to {model_filename}")
-print(f"Vectorizer saved to {vectorizer_filename}")
+    # Extract the text input from the request
+    input_text = data['input']
+
+    # Vectorize the text
+    input_vec = vectorizer.transform([input_text])
+
+    # Make predictions
+    prediction = classifier.predict(input_vec)
+
+    # Return the prediction as a string
+    return jsonify({'prediction': str(prediction[0])})
+
+if __name__ == '__main__':
+    app.run(debug=True)
