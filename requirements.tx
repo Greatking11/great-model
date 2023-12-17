@@ -1,6 +1,5 @@
 flask
 python 
 pandas
-
 sklearn
 joblib
